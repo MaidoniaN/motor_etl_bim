@@ -33,13 +33,7 @@ DB_CONFIG = {
 
 # Definición de rutas del ecosistema de datos
 # ruta_json = "data_output/extraccion_completa.json"
-# ruta_json = "data_output/extraccion_completa_Plumb.json"
-# ruta_json = "data_output/extraccion_completa_Mech.json"
-# ruta_json = "data_output/extraccion_completa_Elec.json"
-# ruta_json = "data_output/extraccion_completa_CajaEscala.json"
-ruta_json = "data_output/extraccion_completa_INS5421.json"
-
-
+ruta_json = "data_output/extraccion_completa_Elec.json"
 
 print("--- Iniciando Fase de Carga (L) en PostgreSQL ---")
 

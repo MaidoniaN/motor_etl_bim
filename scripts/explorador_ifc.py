@@ -53,23 +53,11 @@ def limpiar_nombre_elemento(nombre_sucio):
 # Ruta del archivo origen. Se puede alternar entre modelos arquitectónicos, MEP, etc.
 # ruta_archivo = "data_input/091210Med_Dent_Clinic_MEP_Plumb.ifc"
 # ruta_archivo = "data_input/161210Med_Dent_Clinic_MEP_Mech.ifc"
-# ruta_archivo = "data_input/091210Med_Dent_Clinic_MEP_Elec.ifc"
-# ruta_archivo = "data_input/caja_escala.ifc"
-ruta_archivo = "data_input/INS-5421-020-ifc4_APS02.ifc"
-
+ruta_archivo = "data_input/091210Med_Dent_Clinic_MEP_Elec.ifc"
 
 # Ruta del archivo destino (Staging Area para la base de datos)
 # ruta_salida = "data_output/extraccion_completa.json"
-# ruta_salida = "data_output/extraccion_completa.json"
-
-# ruta_salida = "data_output/extraccion_completa_Plumb.json"
-# ruta_salida = "data_output/extraccion_completa_Mech.json"
-# ruta_salida = "data_output/extraccion_completa_Elec.json"
-# ruta_salida = "data_output/extraccion_completa_CajaEscala.json"
-ruta_salida = "data_output/extraccion_completa_INS5421.json"
-
-
-
+ruta_salida = "data_output/extraccion_completa_Elec.json"
 
 # Crear el directorio de salida de forma segura si no existe en el sistema
 os.makedirs(os.path.dirname(ruta_salida), exist_ok=True)

@@ -1,6 +1,8 @@
 <template>
   <div class="login-wrapper">
-    <div class="login-card">
+    
+    <!-- VISTA DE LOGIN (Se oculta si está autenticado) -->
+    <div v-if="!isAuthenticated" class="login-card">
       <h2>Acceso Plataforma ETL BIM</h2>
       <p class="subtitle">Ingrese sus credenciales de administración</p>
 
@@ -19,7 +21,6 @@
         <div class="input-group">
           <label for="password">Contraseña</label>
           <div class="password-wrapper">
-            <!-- Aquí hacemos la magia: alternamos el tipo de input -->
             <input 
               id="password" 
               v-model="password" 
@@ -35,7 +36,6 @@
               {{ showPassword ? 'Ocultar' : 'Mostrar' }}
             </button>
           </div>
-
         </div>
 
         <button type="submit" class="submit-btn" :disabled="isLoading">
@@ -47,21 +47,91 @@
         {{ errorMessage }}
       </div>
     </div>
+
+    <!-- VISTA DEL DASHBOARD (Aparece tras el login exitoso) -->
+    <div v-else class="login-card dashboard-card">
+      <h2>Panel de Control BIM</h2>
+      <p class="subtitle">Sesión activa. Escuchando eventos del ratón y teclado.</p>
+      
+      <div class="info-box">
+        Si no interactúas con la pantalla en 15 minutos, tu sesión expirará automáticamente por seguridad.
+      </div>
+
+      <button @click="cerrarSesionPorInactividad(true)" class="submit-btn logout-btn">
+        Cerrar Sesión Manual
+      </button>
+    </div>
+
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import axios from 'axios'
 
 const username = ref('')
 const password = ref('')
 const errorMessage = ref('')
 const isLoading = ref(false)
-
-// Nueva variable reactiva para controlar la visibilidad
 const showPassword = ref(false)
 
+// Estado para controlar si el usuario está dentro de la plataforma
+const isAuthenticated = ref(false)
+
+// ==========================================
+// LÓGICA DE SEGURIDAD: INACTIVIDAD
+// ==========================================
+let timeoutInactividad;
+const TIEMPO_MAXIMO_INACTIVIDAD = 15 * 60 * 1000; // 15 minutos en milisegundos
+
+const cerrarSesionPorInactividad = (esManual = false) => {
+  // 1. Borramos el token de localStorage
+  localStorage.removeItem('etl_access_token');
+  
+  // 2. Eliminamos el token de los headers por defecto de Axios
+  delete axios.defaults.headers.common['Authorization'];
+  
+  // 3. Reseteamos el estado para volver al formulario
+  isAuthenticated.value = false;
+  username.value = '';
+  password.value = '';
+  
+  // 4. Mensaje informativo (solo si fue por inactividad)
+  if (!esManual) {
+    errorMessage.value = 'Tu sesión ha expirado por inactividad. Por favor, ingresa nuevamente.';
+  } else {
+    errorMessage.value = '';
+  }
+}
+
+const reiniciarTemporizador = () => {
+  // Solo aplicamos el temporizador si el usuario ya hizo login
+  if (isAuthenticated.value) {
+    clearTimeout(timeoutInactividad);
+    timeoutInactividad = setTimeout(() => cerrarSesionPorInactividad(false), TIEMPO_MAXIMO_INACTIVIDAD);
+  }
+}
+
+// Escuchamos los eventos globales del navegador
+onMounted(() => {
+  window.addEventListener('mousemove', reiniciarTemporizador);
+  window.addEventListener('keydown', reiniciarTemporizador);
+  window.addEventListener('click', reiniciarTemporizador);
+  window.addEventListener('scroll', reiniciarTemporizador);
+})
+
+// Limpiamos los eventos si el componente se destruye (Buena práctica en Vue)
+onUnmounted(() => {
+  window.removeEventListener('mousemove', reiniciarTemporizador);
+  window.removeEventListener('keydown', reiniciarTemporizador);
+  window.removeEventListener('click', reiniciarTemporizador);
+  window.removeEventListener('scroll', reiniciarTemporizador);
+  clearTimeout(timeoutInactividad);
+})
+
+// ==========================================
+// LÓGICA DE AUTENTICACIÓN
+// ==========================================
 const handleLogin = async () => {
   isLoading.value = true
   errorMessage.value = ''
@@ -76,7 +146,9 @@ const handleLogin = async () => {
     localStorage.setItem('etl_access_token', token)
     axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
 
-    alert('Autenticación exitosa. Token registrado en el navegador.')
+    // Login exitoso: Cambiamos estado e iniciamos el conteo de inactividad
+    isAuthenticated.value = true;
+    reiniciarTemporizador();
 
   } catch (error) {
     if (error.response && error.response.status === 401) {
@@ -111,6 +183,10 @@ const handleLogin = async () => {
   max-width: 400px;
 }
 
+.dashboard-card {
+  text-align: center;
+}
+
 h2 {
   margin-bottom: 0.5rem;
   color: #2c3e50;
@@ -120,6 +196,16 @@ h2 {
   color: #7f8c8d;
   margin-bottom: 2rem;
   font-size: 0.9rem;
+}
+
+.info-box {
+  background-color: #e8f4f8;
+  color: #2980b9;
+  padding: 1rem;
+  border-radius: 4px;
+  margin-bottom: 2rem;
+  font-size: 0.9rem;
+  border: 1px solid #bce8f1;
 }
 
 .input-group {
@@ -143,7 +229,6 @@ input {
   box-sizing: border-box;
 }
 
-/* Nuevos estilos para el campo de contraseña */
 .password-wrapper {
   position: relative;
   display: flex;
@@ -151,7 +236,7 @@ input {
 }
 
 .password-wrapper input {
-  padding-right: 80px; /* Dejamos espacio para el botón */
+  padding-right: 80px; 
 }
 
 .toggle-password-btn {
@@ -169,7 +254,6 @@ input {
   text-decoration: underline;
 }
 
-/* Estilos del botón de envío */
 .submit-btn {
   width: 100%;
   padding: 0.75rem;
@@ -189,6 +273,14 @@ input {
 .submit-btn:disabled {
   background-color: #95a5a6;
   cursor: not-allowed;
+}
+
+.logout-btn {
+  background-color: #e74c3c;
+}
+
+.logout-btn:hover {
+  background-color: #c0392b !important;
 }
 
 .error-message {

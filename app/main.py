@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from datetime import timedelta
+from datetime import timedelta, datetime
 
 from . import models, schemas, security, database
 
@@ -63,3 +63,43 @@ def login(
 
     # 6. Responder al frontend con el token generado
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+# ==========================================
+# NUEVOS ENDPOINTS PARA GESTIÓN DE SESIONES
+# ==========================================
+
+@app.get("/sesiones-activas")
+def obtener_sesiones_activas(db: Session = Depends(database.get_db)):
+    """Retorna todas las sesiones marcadas como activas."""
+    # Consultamos el modelo Sesion filtrando por las que están activas
+    sesiones = db.query(models.Sesion).filter(models.Sesion.activa == True).all()
+    return sesiones
+
+
+@app.put("/sesiones/{sesion_id}/revocar")
+def revocar_sesion(sesion_id: int, db: Session = Depends(database.get_db)):
+    """Marca una sesión específica como inactiva y registra la fecha de desconexión."""
+    # 1. Buscar la sesión en la base de datos
+    sesion = db.query(models.Sesion).filter(models.Sesion.id == sesion_id).first()
+    
+    # 2. Validaciones de existencia y estado
+    if not sesion:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail="Sesión no encontrada"
+        )
+    
+    if not sesion.activa:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, 
+            detail="La sesión ya se encuentra inactiva"
+        )
+
+    # 3. Actualizar el estado y registrar la fecha/hora actual del cierre
+    sesion.activa = False
+    sesion.fecha_desconexion = datetime.now()
+    
+    db.commit()
+    
+    return {"mensaje": "Sesión cerrada exitosamente", "id": sesion_id}

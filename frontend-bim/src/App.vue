@@ -54,7 +54,7 @@
       <p class="subtitle">Sesión activa. Escuchando eventos del ratón y teclado.</p>
       
       <div class="info-box">
-        Si no interactúas con la pantalla en 15 minutos, tu sesión expirará automáticamente por seguridad.
+        Si no interactúas con la pantalla en 60 minutos, tu sesión expirará automáticamente por seguridad.
       </div>
 
       <button @click="cerrarSesionPorInactividad(true)" class="submit-btn logout-btn">
@@ -292,4 +292,4 @@ input {
   border: 1px solid #e74c3c;
   font-size: 0.9rem;
 }
-</style>
+</style>  
